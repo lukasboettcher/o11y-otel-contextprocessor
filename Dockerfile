@@ -3,7 +3,9 @@ RUN apk --update add ca-certificates
 
 FROM golang:1.23 AS builder
 RUN go install go.opentelemetry.io/collector/cmd/builder@latest
-COPY . .
+COPY ./otelcol-dev ./otelcol-dev
+COPY ./builder-config.yaml .
+ENV CGO_ENABLED=0
 RUN builder --skip-generate --skip-get-modules  --config builder-config.yaml
 
 FROM scratch
