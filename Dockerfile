@@ -1,16 +1,19 @@
-FROM alpine:3.16 as certs
+FROM alpine:latest AS prep
 RUN apk --update add ca-certificates
 
-# Use debian 
-FROM debian:12-slim
+FROM golang:1.23 AS builder
+RUN go install go.opentelemetry.io/collector/cmd/builder@latest
+COPY . .
+RUN builder --skip-generate --skip-get-modules  --config builder-config.yaml
+
+FROM scratch
 
 ARG USER_UID=10001
-ARG OTEL_BIN=otelcol-dev/otelcol-dev
-USER ${USER_UID}
+ARG USER_GID=10001
+USER ${USER_UID}:${USER_GID}
 
-COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY --chmod=755 ${OTEL_BIN} /otelcol-contrib
-COPY otelcol-contrib.yaml /etc/otelcol-contrib/config.yaml
-ENTRYPOINT ["/otelcol-contrib"]
-CMD ["--config", "/etc/otelcol-contrib/config.yaml"]
-EXPOSE 4317 55678 55679
+COPY --from=prep /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=builder /go/otelcol-dev/otelcontribcol /
+EXPOSE 4317 55680 55679
+ENTRYPOINT ["/otelcontribcol"]
+CMD ["--config", "/etc/otel/config.yaml"]

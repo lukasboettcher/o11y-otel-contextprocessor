@@ -1,4 +1,4 @@
-module github.com/jriguera/opentelemetry-collector-contrib/processor/contextprocessor
+module github.com/lukasboettcher/o11y-otel-contextprocessor/contextprocessor
 
 go 1.21.3
 
